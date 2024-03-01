@@ -1,0 +1,15 @@
+{
+  "name": "tech_bazar_backend",
+  "version": "1.0.0",
+  "description": "This The Backend for e commerce",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "author": "Jatin Vashishtha",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
