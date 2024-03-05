@@ -29,11 +29,9 @@ const userSchema = new Schema(
         },
         dob: {
             type: String,
-            required: true
         },
         gender: {
             type: String,
-            required: true
         },
         password: {
             type: String,
@@ -47,7 +45,7 @@ const userSchema = new Schema(
 
 userSchema.pre("save", async function (next){
     if(this.isModified("password")) return next();
-    this.password = bcrypt.hash(this.password,10)
+    this.password = await bcrypt.hash(this.password,10)
     next();
 })
 
@@ -67,4 +65,15 @@ userSchema.methods.generateAccessToken = function(){
     })
 }
 
-export const user = mongoose.model("User", userSchema);
+
+  userSchema.methods.generateRefreshToken = function(){
+      jwt.sign({
+          _id: this._id,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      {
+          expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+      })
+  }
+
+export const User = mongoose.model("User", userSchema);
