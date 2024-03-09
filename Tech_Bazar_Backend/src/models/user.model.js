@@ -1,5 +1,5 @@
 import mongoose, {Schema} from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "json-web-token";
 
 const userSchema = new Schema(
@@ -22,20 +22,15 @@ const userSchema = new Schema(
             lowercase: true,
             unique: true,
             index: true,
+            required: true,
             trim: true
-        },
-        profileImage: {
-            type: String // the uploading of the image will be on third party services like cloudnairy
-        },
-        dob: {
-            type: String,
-        },
-        gender: {
-            type: String,
         },
         password: {
             type: String,
-            required: true
+            required: true,
+        },
+        refreshToken: {
+            type: String
         }
 
     },{
@@ -44,7 +39,7 @@ const userSchema = new Schema(
 )
 
 userSchema.pre("save", async function (next){
-    if(this.isModified("password")) return next();
+    if(!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password,10)
     next();
 })
