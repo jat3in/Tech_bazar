@@ -4,6 +4,7 @@ import {User} from "../models/user.model.js";
 import {uploadOnCloudnairy} from "../utils/Cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import { response } from "express";
+import jwt from "json-web-token"
 
 const generateAccessAndRefereshTokens = async (user_id) => {
     const user = await User.findById(user_id);
@@ -139,4 +140,38 @@ const logoutHandler = asyncHandler( async(req,res) => {
         return res.status(200).clearcokkie("accessToken",options).clearcokkie("refreshToken",options).json(new ApiResponse(200, {}, "user logged out successfully"))
 })
 
-export {registerUser, loginUser, logoutHandler} 
+const generateAccessRefreshToken = asyncHandler(async (req,res) => {
+   const incomingRefreshToken = req.body?.refreshToken || req.cookies.refreshToken
+
+   if(!incomingRefreshToken){
+    throw new ApiError(401,"Invalid Refresh Token")
+   }
+
+ try {
+      const decodedRefreshToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
+   
+      if(!decodedRefreshToken){
+       throw new ApiError(401,"Decoded Code is not generated")
+      }
+   
+     const user = await User.findOne(decodedRefreshToken?._id)
+     if(!user){
+       throw new ApiError(400,"User not found RefreshToken Are In correct")
+     }
+   
+    const {accessToken, newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+   
+    res.status(200).cookie("accessToken",accessToken,options).cookie("refreshToken",newRefreshToken,options).json(new ApiResponse(200,{
+       accessToken, refreshToken: newRefreshToken
+    },"Refreshed Token Generated Successfully"))
+   
+ } catch (error) {
+    throw new ApiError(error?.message || "Invalid Refresh Token")
+ }
+})
+
+export {registerUser, loginUser, logoutHandler,generateAccessRefreshToken} 
