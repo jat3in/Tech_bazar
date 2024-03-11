@@ -174,4 +174,74 @@ const generateAccessRefreshToken = asyncHandler(async (req,res) => {
  }
 })
 
-export {registerUser, loginUser, logoutHandler,generateAccessRefreshToken} 
+const changeCurrentPassword = asyncHandler(async(req,res) => {
+    const {oldPassword, newPassword} = req.body
+    const user = await User.findById(req?.user._id)
+    if(!user){
+        throw new ApiError(400,"user not found")
+    }
+
+    const isPasswordValid = await user.isPasswordIsCorrect(oldPassword)
+    if(!isPasswordValid){
+        throw new ApiError(400, "invalid old password")
+    }
+
+    user.password = newPassword;
+
+    user.save({validateBeforeSave : false})
+
+    return res.status(200).json(new ApiResponse(200,{},"password change successfully"))
+})
+
+
+const getCurrentUser = asyncHandler(async(req,res)=>{
+    return res.status(200).json(200, req.user,"current user fecthed successfully")
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=> {
+    const {fullname,email} = req.body;
+    if(!fullname && !email){
+        throw new ApiError(400,"All fields are necessary")
+    }
+
+    const user = await User.findByIdAndUpdate(req.user?._id,{
+        $set: {
+            fullname,email
+        }
+    },{new: true}).select("-password")
+
+    return res.status(200).json(new ApiResponse(200, user,"User Updated Successfully"))
+})
+
+const updateProfileImage = asyncHandler(async(req,res) => {
+   const profileIamgeLocalPath = req.file?.path
+   if(!profileIamgeLocalPath){
+    throw new ApiError(400,"the profile image file is required")
+   }
+
+   const profileIamge = await uploadOnCloudnairy(profileIamgeLocalPath)
+   if(!profileIamge?.url){
+    throw new ApiError(400,"detecting error ehilr uploading on cloudnairy")
+   }
+
+   const user = await User.findByIdAndUpdate(req.user?._id,{
+    $set: {
+        profileImage : {
+            profileImage: profileImage?.url
+        }
+    }
+   },{new: true}).select("-password")
+
+   return res.status(200).json(new ApiResponse(200,"Profile Image updated successfully"))
+})
+
+
+const getUserChannelSubscriber = asyncHandler(async(req,res))
+export {registerUser,
+     loginUser,
+      logoutHandler,
+      generateAccessRefreshToken,
+      getCurrentUser,
+      changeCurrentPassword,
+    updateAccountDetails,
+updateProfileImage} 
